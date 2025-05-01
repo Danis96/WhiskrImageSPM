@@ -1,0 +1,16 @@
+{
+    "name": "WhiskrImageSPM",
+    "buildRoot": "${workspaceRoot}/.build",
+    "indexRoot": "${workspaceRoot}/.build/index",
+    "swiftpmFlags": [],
+    "settings": {
+        "swift": {
+            "sourcekit-lsp": {
+                "diagnostics": true,
+                "indexing": {
+                    "enabled": true
+                }
+            }
+        }
+    }
+}
