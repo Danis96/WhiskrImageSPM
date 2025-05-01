@@ -22,6 +22,8 @@ public final class WhiskrImageCoordinator: CoordinatorProtocol {
     // MARK: - View Models
     @Published public private(set) var imageViewModel: WhiskrImageViewModel
     
+    @Injected(\WhiskrImageSPM.selectedImage) public var sharedImageState
+    
     // MARK: - Navigation
     @Published public var sheet: ImagesRoute?
     
@@ -33,11 +35,24 @@ public final class WhiskrImageCoordinator: CoordinatorProtocol {
     public func start() -> AnyView {
         print("Starting Whiskr Image Coordinator")
         return AnyView(
-            Text("")
-            // here will be view
-//            AuthenticationRootView()
-//                .environmentObject(authViewModel)
-//                .environmentObject(self)
+            WhiskrImagePicker(selectedImage: imageViewModel.selectedImage,
+                              placeholderText: "Select an image")
+            .environmentObject(imageViewModel)
+            .environmentObject(self)
+        )
+    }
+    
+    // Pass a custom binding and placeholder text
+    public func start(selectedImage: Binding<Image?>, placeholderText: String? = nil) -> AnyView {
+        print("Starting Whiskr Image Coordinator with custom binding")
+        // Update the shared state with the external binding
+        self.sharedImageState.image = selectedImage.wrappedValue
+        
+        return AnyView(
+            WhiskrImagePicker(selectedImage: selectedImage,
+                              placeholderText: placeholderText)
+            .environmentObject(imageViewModel)
+            .environmentObject(self)
         )
     }
     
