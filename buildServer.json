@@ -6,9 +6,26 @@
     "settings": {
         "swift": {
             "sourcekit-lsp": {
-                "diagnostics": true,
+                "diagnostics": {
+                    "enabled": true,
+                    "buildAfterChanges": true,
+                    "showInlineErrors": true
+                },
                 "indexing": {
                     "enabled": true
+                },
+                "completion": {
+                    "enabled": true,
+                    "maxResults": 100,
+                    "includeExactMatch": true,
+                    "addBrackets": true
+                },
+                "syntaxHighlighting": {
+                    "enabled": true
+                },
+                "watchedFiles": {
+                    "enabled": true,
+                    "pollTime": 500
                 }
             }
         }
