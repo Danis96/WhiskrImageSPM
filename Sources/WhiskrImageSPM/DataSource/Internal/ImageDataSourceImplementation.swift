@@ -5,15 +5,15 @@
 //  Created by Danis Preldzic on 1. 5. 2025..
 //
 
-import Foundation
 import SQAServices
 import SQAUtility
 import UIKit
 import Factory
+import Foundation
 
 public final class ImageDataSourceImplementation: ImageDataSourceProtocol, @unchecked Sendable {
     
-    public static let shared = ImageDataSourceImplementation()
+    public static let shared: ImageDataSourceImplementation = ImageDataSourceImplementation()
     
     private init() {}
     

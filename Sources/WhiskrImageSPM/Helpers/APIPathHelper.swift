@@ -13,7 +13,7 @@ public enum ImagesRoute: String, Identifiable {
 }
 
 public final class APIPaths: @unchecked Sendable {
-    public static let shared = APIPaths()
+    public static let shared: APIPaths = APIPaths()
     private init() {}
     
     public func path(for endpoint: ImagesRoute, String concatValue: String? = nil,  String secondConcatValue: String? = nil, String thirdConcatValue: String? = nil) -> String {
