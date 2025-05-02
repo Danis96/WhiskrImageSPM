@@ -12,7 +12,9 @@ import Factory
 
 @MainActor
 public struct WhiskrImagePicker: View {
-    @Binding private var selectedImage: Image?
+    
+    @EnvironmentObject private var viewModel: WhiskrImageViewModel
+    @Binding private var selectedImage: ImageModel?
     @State private var selectedItem: PhotosPickerItem?
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
@@ -20,42 +22,57 @@ public struct WhiskrImagePicker: View {
     private var placeholderIcon: String
     
     
-    public init(selectedImage: Binding<Image?>, placeholderText: String? = nil, placeholderIcon: String = "photo.badge.plus") {
+    
+    public init(selectedImage: Binding<ImageModel?>, placeholderText: String? = nil, placeholderIcon: String = "photo.badge.plus") {
         self._selectedImage = selectedImage
         self.placeholderText = placeholderText
         self.placeholderIcon = placeholderIcon
     }
     
     public var body: some View {
-        VStack {
-            imageDisplayView
-            
-            if selectedImage != nil {
-                removeImageButton
-            } else {
-                imagePickerButton
+        ZStack {
+            VStack {
+                imageDisplayView
+                
+                if selectedImage != nil {
+                    removeImageButton
+                } else {
+                    imagePickerButton
+                }
+            }
+            .onChange(of: selectedItem, perform: handleImageSelection)
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Failed to load image: \(errorMessage)")
             }
             
         }
-        .onChange(of: selectedItem, perform: handleImageSelection)
-        .alert("Error", isPresented: $showError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Failed to load image: \(errorMessage)")
-        }
+        
     }
 }
 
 private extension WhiskrImagePicker {
     var imageDisplayView: some View {
         Group {
-            if let selectedImage {
-                selectedImage
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 200, height: 200)
-                    .clipShape(Circle())
-                    .shadow(radius: 5)
+            if let selectedImage, let imageUrl = selectedImage.url, let url = URL(string: imageUrl) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                        case .empty:
+                            ProgressView()
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 200, height: 200)
+                                .clipShape(Circle())
+                                .shadow(radius: 5)
+                        case .failure(_):
+                            placeholderView
+                        @unknown default:
+                            placeholderView
+                    }
+                }
             } else {
                 placeholderView
             }
@@ -168,39 +185,24 @@ private extension WhiskrImagePicker {
                 print("PhotoPicker: Successfully loaded image")
             } catch {
                 print("PhotoPicker Error: \(error.localizedDescription)")
-                handleError(error)
             }
         }
     }
     
-    func loadAndSetImage(from item: PhotosPickerItem) async throws {
-        guard let data = try await item.loadTransferable(type: Data.self) else {
-            print("PhotoPicker: Failed to load data")
-            throw URLError(.badServerResponse)
-        }
-        
-        guard let uiImage = UIImage(data: data) else {
-            print("PhotoPicker: Failed to create UIImage")
-            throw URLError(.cannotDecodeContentData)
-        }
-        
-        selectedImage = Image(uiImage: uiImage)
-    }
-    
-    func handleError(_ error: Error) {
-        errorMessage = error.localizedDescription
-        showError = true
+    private func loadAndSetImage(from item: PhotosPickerItem) async throws {
+        selectedImage = try await viewModel.processAndUploadImage(from: item, folder: .user)
     }
 }
 
 // MARK: - Preview
-#Preview("SQAImagePicker") {
+#Preview {
     struct PreviewWrapper: View {
-        @State private var previewImage: Image?
+        @State private var previewImage: ImageModel?
         
         var body: some View {
             WhiskrImagePicker(selectedImage: $previewImage, placeholderText: "Add image profile photo")
                 .padding()
+            
         }
     }
     

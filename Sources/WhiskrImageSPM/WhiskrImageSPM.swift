@@ -28,9 +28,9 @@ public extension WhiskrImageSPM {
 }
 
 public class SharedImageState: ObservableObject {
-    @Published public var image: Image?
+    @Published public var image: ImageModel?
     
-    public init(image: Image? = nil) {
+    public init(image: ImageModel? = nil) {
         self.image = image
     }
 }
