@@ -20,13 +20,19 @@ public struct WhiskrImagePicker: View {
     @State private var errorMessage: String = ""
     private var placeholderText: String? = "Select an image"
     private var placeholderIcon: String
+    private var type: ImageFolderName
+    private var typeID: String
+    private var allowInternalUse: Bool
     
     
     
-    public init(selectedImage: Binding<ImageModel?>, placeholderText: String? = nil, placeholderIcon: String = "photo.badge.plus") {
+    public init(selectedImage: Binding<ImageModel?>, placeholderText: String? = nil, placeholderIcon: String = "photo.badge.plus", type: ImageFolderName = .userProfile, typeID: String =  "userid||petid||recipeid", allowInternalUse: Bool = true) {
         self._selectedImage = selectedImage
         self.placeholderText = placeholderText
         self.placeholderIcon = placeholderIcon
+        self.type = type
+        self.typeID = typeID
+        self.allowInternalUse = allowInternalUse
     }
     
     public var body: some View {
@@ -55,26 +61,39 @@ public struct WhiskrImagePicker: View {
 private extension WhiskrImagePicker {
     var imageDisplayView: some View {
         Group {
-            if let selectedImage, let imageUrl = selectedImage.url, let url = URL(string: imageUrl) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                        case .empty:
-                            ProgressView()
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 200, height: 200)
-                                .clipShape(Circle())
-                                .shadow(radius: 5)
-                        case .failure(_):
-                            placeholderView
-                        @unknown default:
-                            placeholderView
+            if allowInternalUse {
+                if let selectedImage, let imageUrl = selectedImage.url, let url = URL(string: imageUrl) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                            case .empty:
+                                ProgressView()
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 200, height: 200)
+                                    .clipShape(Circle())
+                                    .shadow(radius: 5)
+                            case .failure(_):
+                                placeholderView
+                            @unknown default:
+                                placeholderView
+                        }
                     }
+                } else {
+                    placeholderView
                 }
             } else {
-                placeholderView
+                if let processedImage = selectedImage?.imageProcessed {
+                    Image(uiImage: processedImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 200, height: 200)
+                        .clipShape(Circle())
+                        .shadow(radius: 5)
+                } else {
+                    placeholderView
+                }
             }
         }
     }
@@ -106,9 +125,10 @@ private extension WhiskrImagePicker {
     
     var removeImageButton: some View {
         Button(action: {
-            withAnimation(.spring) {
-                selectedImage = nil
-                selectedItem = nil
+            if allowInternalUse {
+                deleteImageSelection()
+            } else {
+                deleteLocalImageSelection()
             }
         }) {
             HStack(spacing: 12) {
@@ -178,11 +198,13 @@ private extension WhiskrImagePicker {
     func handleImageSelection(_ item: PhotosPickerItem?) {
         guard let item else { return }
         
-        print("PhotoPicker: Item selected")
         Task {
             do {
-                try await loadAndSetImage(from: item)
-                print("PhotoPicker: Successfully loaded image")
+                if allowInternalUse {
+                    try await loadAndSetImage(from: item)
+                } else {
+                    try await loadImage(from: item)
+                }
             } catch {
                 print("PhotoPicker Error: \(error.localizedDescription)")
             }
@@ -190,7 +212,38 @@ private extension WhiskrImagePicker {
     }
     
     private func loadAndSetImage(from item: PhotosPickerItem) async throws {
-        selectedImage = try await viewModel.processAndUploadImage(from: item, folder: .user)
+        selectedImage = try await viewModel.processAndUploadImage(from: item, folder: type)
+        print("Load and set image: \(selectedImage?.imageId ?? "")")
+    }
+    
+    private func loadImage(from item: PhotosPickerItem) async throws {
+        selectedImage = try await viewModel.processImage(from: item)
+        print("Load and set image processed")
+    }
+    
+    private func deleteImageSelection() {
+        print("Selected image: \(selectedImage?.imageId ?? "")")
+        print("Selected image: \(selectedImage?.url ?? "")")
+        print("Selected image: \(selectedImage?.thumbnail ?? "")")
+        print("Selected image: \(selectedImage?.id ?? "")")
+        let imageID = selectedImage?.imageId ?? ""
+        print("imageID image: \(imageID)")
+        withAnimation(.spring) {
+            Task {
+                do {
+                    try await viewModel.deleteImage(imageID: imageID, type: type, typeID: typeID)
+                } catch {
+                    //
+                }
+            }
+            deleteLocalImageSelection()
+        }
+    }
+    
+    private func deleteLocalImageSelection() {
+        print("JUST deleteLocalImageSelection")
+        selectedImage = nil
+        selectedItem = nil
     }
 }
 

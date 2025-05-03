@@ -24,7 +24,7 @@ public final class ImageDataSourceImplementation: ImageDataSourceProtocol, @unch
     public func uploadImage(image: UIImage, folder: String, fileName: String) async throws -> ResponseModel<ImageModel> {
         do {
             let response = try await networkService.uploadImage(
-                path: APIPaths.shared.path(for: .uploadImage),
+                path: ImageAPIPaths.shared.path(for: .uploadImage),
                 image: image,
                 folder: folder,
                 fileName: fileName,
@@ -32,6 +32,24 @@ public final class ImageDataSourceImplementation: ImageDataSourceProtocol, @unch
                 as: ImageModel.self,
             )
             return ResponseModel(data: response, error: nil)
+        } catch {
+            return ResponseModel(data: nil, error: error.localizedDescription)
+        }
+    }
+    
+    public func deleteImage(imageId: String, type: String, typeId: String) async throws -> ResponseModel<String> {
+        do {
+            let response = try await networkService.delete(
+                path: ImageAPIPaths.shared.path(for: .deleteImage, concatValue: type, secondConcatValue: typeId, thirdConcatValue: imageId),
+                headers: headerHelper.getValue(type: .auth_app_json, accessToken: getAuthToken() ?? ""),
+                as: String.self,
+            )
+            if response != nil {
+                return ResponseModel(data: "Success", error: nil)
+            } else {
+                return ResponseModel(data: nil, error: "Image deletion failed")
+            }
+            
         } catch {
             return ResponseModel(data: nil, error: error.localizedDescription)
         }
@@ -45,5 +63,4 @@ public final class ImageDataSourceImplementation: ImageDataSourceProtocol, @unch
             return nil
         }
     }
-    
 }
