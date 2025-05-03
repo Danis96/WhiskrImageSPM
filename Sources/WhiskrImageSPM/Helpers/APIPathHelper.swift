@@ -7,21 +7,21 @@
 
 public enum ImagesRoute: String, Identifiable {
     case uploadImage
-    case delete
+    case deleteImage
     
     public var id: String { rawValue }
 }
 
-public final class APIPaths: @unchecked Sendable {
-    public static let shared: APIPaths = APIPaths()
+public final class ImageAPIPaths: @unchecked Sendable {
+    public static let shared: ImageAPIPaths = ImageAPIPaths()
     private init() {}
     
-    public func path(for endpoint: ImagesRoute, String concatValue: String? = nil,  String secondConcatValue: String? = nil, String thirdConcatValue: String? = nil) -> String {
+    public func path(for endpoint: ImagesRoute, concatValue: String? = nil,  secondConcatValue: String? = nil,  thirdConcatValue: String? = nil) -> String {
         switch endpoint {
             case .uploadImage:
                 return "/image"
-            case .delete:
-                return "image/\(concatValue ?? "")/\(secondConcatValue ?? "")/image/\(thirdConcatValue ?? "")"
+            case .deleteImage:
+                return "/image/\(concatValue ?? "")/\(secondConcatValue ?? "")/image/\(thirdConcatValue ?? "")"
         }
     }
 }
