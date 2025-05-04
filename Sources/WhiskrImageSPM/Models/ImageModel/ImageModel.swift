@@ -7,13 +7,14 @@
 
 import Foundation
 import SwiftUI
+import UIKit
 
 public struct ImageModel: Codable, Sendable {
-    let id: String?
-    let url: String?
-    let thumbnail: String?
-    let imageId: String?
-    let imageProcessed: UIImage?
+    public var id: String?
+    public var url: String?
+    public var thumbnail: String?
+    public var imageId: String?
+    public var imageProcessed: UIImage?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -36,7 +37,7 @@ public struct ImageModel: Codable, Sendable {
         url = try container.decodeIfPresent(String.self, forKey: .url)
         thumbnail = try container.decodeIfPresent(String.self, forKey: .thumbnail)
         imageId = try container.decodeIfPresent(String.self, forKey: .imageId)
-        imageProcessed = nil // UIImage isn't part of the JSON, so we initialize it as nil
+        imageProcessed = nil
     }
     
     public func toJson() -> [String: String] {
