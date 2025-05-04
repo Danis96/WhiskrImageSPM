@@ -6,15 +6,15 @@
 //
 
 public struct ResponseModel<T>: Codable, Sendable where T: Codable, T: Sendable {
-    var data: T?
-    var error: String?
+    public var data: T?
+    public var error: String?
     
-    init(data: T?, error: String?) {
+    public init(data: T?, error: String?) {
         self.data = data
         self.error = error
     }
     
-    var isSuccess: Bool {
+    public var isSuccess: Bool {
         return data != nil && error == nil
     }
 }

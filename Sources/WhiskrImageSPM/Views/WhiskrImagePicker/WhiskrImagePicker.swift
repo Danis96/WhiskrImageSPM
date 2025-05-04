@@ -61,30 +61,14 @@ public struct WhiskrImagePicker: View {
 private extension WhiskrImagePicker {
     var imageDisplayView: some View {
         Group {
-            if allowInternalUse {
-                if let selectedImage, let imageUrl = selectedImage.url, let url = URL(string: imageUrl) {
+            if let selectedImage {
+                if let imageUrl = selectedImage.url, let url = URL(string: imageUrl) {
+                    // Remote image handling
                     AsyncImage(url: url) { phase in
-                        switch phase {
-                            case .empty:
-                                ProgressView()
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 200, height: 200)
-                                    .clipShape(Circle())
-                                    .shadow(radius: 5)
-                            case .failure(_):
-                                placeholderView
-                            @unknown default:
-                                placeholderView
-                        }
+                        handleImagePhase(phase)
                     }
-                } else {
-                    placeholderView
-                }
-            } else {
-                if let processedImage = selectedImage?.imageProcessed {
+                } else if !allowInternalUse, let processedImage = selectedImage.imageProcessed {
+                    // Local processed image handling
                     Image(uiImage: processedImage)
                         .resizable()
                         .scaledToFill()
@@ -94,7 +78,29 @@ private extension WhiskrImagePicker {
                 } else {
                     placeholderView
                 }
+            } else {
+                placeholderView
             }
+        }
+    }
+    
+    private func handleImagePhase(_ phase: AsyncImagePhase) -> some View {
+        switch phase {
+            case .empty:
+                return AnyView(ProgressView())
+            case .success(let image):
+                return AnyView(
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 200, height: 200)
+                        .clipShape(Circle())
+                        .shadow(radius: 5)
+                )
+            case .failure:
+                return AnyView(placeholderView)
+            @unknown default:
+                return AnyView(placeholderView)
         }
     }
     
@@ -212,20 +218,18 @@ private extension WhiskrImagePicker {
     }
     
     private func loadAndSetImage(from item: PhotosPickerItem) async throws {
-        selectedImage = try await viewModel.processAndUploadImage(from: item, folder: type)
-        print("Load and set image: \(selectedImage?.imageId ?? "")")
+        let image = try await viewModel.processAndUploadImage(from: item, folder: type)
+        print("Load and set image: \(image.imageId ?? "")")
+        selectedImage = image
     }
     
     private func loadImage(from item: PhotosPickerItem) async throws {
-        selectedImage = try await viewModel.processImage(from: item)
+        let image = try await viewModel.processImage(from: item)
         print("Load and set image processed")
+        selectedImage = image
     }
     
     private func deleteImageSelection() {
-        print("Selected image: \(selectedImage?.imageId ?? "")")
-        print("Selected image: \(selectedImage?.url ?? "")")
-        print("Selected image: \(selectedImage?.thumbnail ?? "")")
-        print("Selected image: \(selectedImage?.id ?? "")")
         let imageID = selectedImage?.imageId ?? ""
         print("imageID image: \(imageID)")
         withAnimation(.spring) {
@@ -241,7 +245,8 @@ private extension WhiskrImagePicker {
     }
     
     private func deleteLocalImageSelection() {
-        print("JUST deleteLocalImageSelection")
+        viewModel.selectedImage.wrappedValue = nil
+        selectedImage?.imageProcessed = nil
         selectedImage = nil
         selectedItem = nil
     }

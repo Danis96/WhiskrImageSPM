@@ -32,17 +32,23 @@ public class WhiskrImageViewModel: ObservableObject {
     @Injected(\WhiskrImageSPM.imageDataSource) private var imageDataSource
     @Injected(\WhiskrImageSPM.selectedImage) private var sharedImageState
     @Published public var isLoading: Bool = false
+    private var processedUIImage: UIImage?
     
-    public func uploadImage(uiImage: UIImage, folder: ImageFolderName, fileName: String) async -> ResponseModel<ImageModel> {
+    public func uploadImage(folder: ImageFolderName) async -> ResponseModel<ImageModel> {
         isLoading = true
         defer {
             isLoading = false
         }
+        
         do {
+            guard let unwrappedImage: UIImage = processedUIImage else {
+                return ResponseModel(data: nil, error: "No image available for upload")
+            }
+            
             let response: ResponseModel<ImageModel> = try await imageDataSource.uploadImage(
-                image: uiImage,
-                folder: folder.rawValue, 
-                fileName: fileName
+                image: unwrappedImage,
+                folder: folder.rawValue,
+                fileName: UUID().uuidString
             )
             print("Response: \(response.data?.url ?? "")")
             print("Response: \(response.data?.imageId ?? "")")
@@ -67,6 +73,8 @@ public class WhiskrImageViewModel: ObservableObject {
             throw URLError(.cannotDecodeContentData)
         }
         
+        processedUIImage = uiImage
+        
         // Create initial SwiftUI Image and return processed image model
         let localImage: Image = Image(uiImage: uiImage)
         return ImageModel(imageProcessed: uiImage)
@@ -85,15 +93,13 @@ public class WhiskrImageViewModel: ObservableObject {
             throw URLError(.cannotDecodeContentData)
         }
         
+        processedUIImage = uiImage
+        
         // Create initial SwiftUI Image
         let localImage = Image(uiImage: uiImage)
         
         // Upload the image
-        let response = try await uploadImage(
-            uiImage: uiImage,
-            folder: folder,
-            fileName: UUID().uuidString
-        )
+        let response = try await uploadImage(folder: folder)
         
         // Return the appropriate image
         if let imageData = response.data, let imageUrl = imageData.url {

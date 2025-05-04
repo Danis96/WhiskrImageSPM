@@ -45,12 +45,20 @@ public final class WhiskrImageCoordinator: CoordinatorProtocol {
     // Pass a custom binding and placeholder text
     public func start(selectedImage: Binding<ImageModel?>, placeholderText: String? = nil, placeHolderIcon: String? = nil, type: ImageFolderName = .userProfile, typeID: String = "userid||petid||recipeid", allowInternalUse: Bool = true) -> AnyView {
         print("Starting Whiskr Image Coordinator with custom binding")
-        // Update the shared state with the external binding
+        // Update the shared state with the external binding and create a two-way binding
         self.sharedImageState.image = selectedImage.wrappedValue
         
+        // Create a new binding that updates both the shared state and the passed binding
+        let combinedBinding = Binding<ImageModel?>(
+            get: { selectedImage.wrappedValue },
+            set: { newValue in
+                self.sharedImageState.image = newValue
+                selectedImage.wrappedValue = newValue
+            }
+        )
         
         return AnyView(
-            WhiskrImagePicker(selectedImage: selectedImage,
+            WhiskrImagePicker(selectedImage: combinedBinding,
                               placeholderText: placeholderText,
                               placeholderIcon: placeHolderIcon ?? "photo.badge.plus",
                               type: type,
