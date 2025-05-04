@@ -32,7 +32,7 @@ public class WhiskrImageViewModel: ObservableObject {
     @Injected(\WhiskrImageSPM.imageDataSource) private var imageDataSource
     @Injected(\WhiskrImageSPM.selectedImage) private var sharedImageState
     @Published public var isLoading: Bool = false
-    private var processedUIImage: UIImage?
+    var processedUIImage: UIImage?
     
     public func uploadImage(folder: ImageFolderName) async -> ResponseModel<ImageModel> {
         isLoading = true
@@ -50,8 +50,6 @@ public class WhiskrImageViewModel: ObservableObject {
                 folder: folder.rawValue,
                 fileName: UUID().uuidString
             )
-            print("Response: \(response.data?.url ?? "")")
-            print("Response: \(response.data?.imageId ?? "")")
             
             return ResponseModel(data: response.data, error: nil)
         } catch {
