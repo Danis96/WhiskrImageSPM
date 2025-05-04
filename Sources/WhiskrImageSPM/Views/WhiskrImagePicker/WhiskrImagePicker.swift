@@ -231,13 +231,12 @@ private extension WhiskrImagePicker {
     
     private func deleteImageSelection() {
         let imageID = selectedImage?.imageId ?? ""
-        print("imageID image: \(imageID)")
         withAnimation(.spring) {
             Task {
                 do {
                     try await viewModel.deleteImage(imageID: imageID, type: type, typeID: typeID)
-                } catch {
-                    //
+                } catch let error {
+                    print(error.localizedDescription)
                 }
             }
             deleteLocalImageSelection()
@@ -246,6 +245,7 @@ private extension WhiskrImagePicker {
     
     private func deleteLocalImageSelection() {
         viewModel.selectedImage.wrappedValue = nil
+        viewModel.processedUIImage = nil
         selectedImage?.imageProcessed = nil
         selectedImage = nil
         selectedItem = nil
